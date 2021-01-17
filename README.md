@@ -1,6 +1,6 @@
 # TiGraph: Graph Database on TiDB
 
-> This is a [TiDB Hackathon 2020](https://pingcap.com/community/events/hackathon2020/) project.
+> This is a failed project in [TiDB Hackathon 2020](https://pingcap.com/community/events/hackathon2020/) project.
 
 TiGraph is a graph database build with TiDB.
 
