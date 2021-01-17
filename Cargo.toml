@@ -1,0 +1,18 @@
+[package]
+name = "tigraph"
+version = "0.1.0"
+authors = ["leiysky <leiysky@outlook.com>"]
+edition = "2018"
+default-run = "tigraph-server"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[[bin]]
+path = "src/main.rs"
+name = "tigraph-server"
+
+[dependencies]
+nom = "6"
+mysql = "*"
+actix-web = "3"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
