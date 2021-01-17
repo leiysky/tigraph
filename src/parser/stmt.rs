@@ -35,8 +35,8 @@ pub enum ReadingClause {
 
 #[derive(Debug)]
 pub struct MatchClause {
-    pub pattern: Pattern,
-    pub filter: Option<Expr>,
+    pub pattern: Vec<Pattern>,
+    pub filter: Vec<Expr>,
 }
 
 #[derive(Debug)]

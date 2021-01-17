@@ -1,6 +1,6 @@
 use crate::{
     core::Context,
-    optimizer::{ExpandExpr, ProjectExpr, RelExpr, ScalarExpr},
+    optimizer::{ExpandExpr, ProjectExpr, RelExpr, ScalarExpr, SelectExpr},
     types::Object,
 };
 use crate::{core::TiDBService, types::Value};
@@ -167,8 +167,8 @@ impl Executor for TiDBNestedLoopExpand {
 
         let mut result = Vec::new();
 
-        println!("Relationships: {:#?}", rels);
-        println!("End Nodes: {:#?}", end_nodes);
+        // println!("Relationships: {:#?}", rels);
+        // println!("End Nodes: {:#?}", end_nodes);
 
         // Join with rels
         while let Ok(Some(ref ctx)) = self.child.next() {
@@ -279,6 +279,54 @@ impl TiDBNestedLoopExpand {
     }
 }
 
+pub struct FilterExec {
+    filter: Vec<ScalarExpr>,
+    child: Box<dyn Executor>,
+}
+
+impl Executor for FilterExec {
+    fn open(&mut self) -> Result<(), Error> {
+        self.child.open()
+    }
+
+    fn close(&mut self) -> Result<(), Error> {
+        self.child.close()
+    }
+
+    fn next(&mut self) -> Result<Option<ExecutionContext>, Error> {
+        match self.child.next() {
+            Ok(Some(ctx)) => {
+                let mut result = true;
+                for filter in self.filter.iter() {
+                    if !result {
+                        break;
+                    };
+                    // println!("{:#?}", ctx);
+                    match eval(filter, &ctx)? {
+                        Value::Boolean(v) if v => result = true,
+                        _ => result = false,
+                    };
+                }
+                if result {
+                    Ok(Some(ctx))
+                } else {
+                    self.next()
+                }
+            }
+            v @ _ => v,
+        }
+    }
+}
+
+impl FilterExec {
+    pub fn new(child: Box<dyn Executor>, expr: &SelectExpr) -> FilterExec {
+        FilterExec {
+            filter: expr.filter.to_owned(),
+            child: child,
+        }
+    }
+}
+
 fn prepare_tidb_connection(context: &Context) -> Result<PooledConn, Error> {
     let TiDBService {
         ref host,
@@ -323,6 +371,7 @@ fn scan_table(
             let mut obj = Object::new();
             let mut row = row?;
             for i in 0..row.len() {
+                // println!("Row: {:#?}", row);
                 let v: Value = row.take(i).unwrap();
                 obj.set(column_names.get(i).unwrap(), &v);
             }

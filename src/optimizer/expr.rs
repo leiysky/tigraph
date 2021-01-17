@@ -30,6 +30,8 @@ pub enum ScalarExpr {
     LogicAnd(Box<ScalarExpr>, Box<ScalarExpr>),
     PropertyLookup(Box<ScalarExpr>, String),
     Variable(String),
+    NumberLiteral(f64),
+    StringLiteral(String),
 }
 
 #[derive(Debug)]

@@ -85,5 +85,5 @@ fn test_run_query() {
     ))
     .unwrap();
 
-    println!("{}", serde_json::to_string(&result).unwrap());
+    // println!("{}", serde_json::to_string(&result).unwrap());
 }

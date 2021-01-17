@@ -58,12 +58,23 @@ fn match_clause(input: &str) -> IResult<&str, ReadingClause> {
             tag_no_case("MATCH"),
             sp1,
             pattern,
+            many0(tuple((tag(","), sp0, pattern))),
             opt(tuple((sp1, tag_no_case("WHERE"), sp1, expr))),
         )),
         |v| {
+            let mut patterns = Vec::new();
+            patterns.push(v.2);
+            for i in v.3.into_iter() {
+                patterns.push(i.2);
+            }
+            let mut predicate = Vec::new();
+            match v.4 {
+                Some((_, _, _, e)) => predicate.push(e),
+                None => {}
+            };
             ReadingClause::Match(MatchClause {
-                pattern: v.2,
-                filter: v.3.map(|v| v.3),
+                pattern: patterns,
+                filter: predicate,
             })
         },
     )(input)
@@ -482,5 +493,15 @@ fn test_parse() {
     WHERE a = 1
     RETURN *, a, b;"#;
     let parser = Parser::new();
-    println!("{:#?}", parser.parse(query));
+    // println!("{:#?}", parser.parse(query));
+}
+
+#[test]
+fn test_parse_multiple_pattern() {
+    let query = r#"
+    MATCH (a:Label1)-[r:Type1]->(b:Label2), (c:Label1)<-[r1:Type1]-(d:Label2)
+    WHERE a = 1
+    RETURN *, a, b;"#;
+    let parser = Parser::new();
+    // println!("{:#?}", parser.parse(query));
 }

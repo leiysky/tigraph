@@ -1,4 +1,4 @@
-use crate::runtime::{Executor, ProjectExec, TiDBNestedLoopExpand, TiDBScanExec};
+use crate::runtime::{Executor, FilterExec, ProjectExec, TiDBNestedLoopExpand, TiDBScanExec};
 use crate::Error;
 
 use super::expr::RelExpr;
@@ -13,6 +13,10 @@ pub fn default_implementation(rel_expr: &RelExpr) -> Result<Box<dyn Executor>, E
         RelExpr::Projection(project) => Ok(Box::new(ProjectExec::new(
             default_implementation(&project.child)?,
             project,
+        ))),
+        RelExpr::Selection(select) => Ok(Box::new(FilterExec::new(
+            default_implementation(&select.child)?,
+            select,
         ))),
         _ => unimplemented!(),
     }

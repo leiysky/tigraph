@@ -64,7 +64,17 @@ impl From<V> for Value {
         match value {
             V::Int(v) => Value::Int(v),
             V::Double(v) => Value::Double(v),
-            V::Bytes(v) => Value::String(String::from_utf8(v).unwrap()),
+            V::Bytes(v) => {
+                let string = String::from_utf8(v).unwrap();
+
+                if let Ok(v) = i64::from_str_radix(&string, 10) {
+                    Value::Int(v)
+                } else if let Ok(v) = string.parse::<f64>() {
+                    Value::Double(v)
+                } else {
+                    Value::String(string)
+                }
+            }
             V::NULL => Value::Null,
             _ => Value::Null,
         }

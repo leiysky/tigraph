@@ -10,7 +10,7 @@ impl Planner {
         let mut builder = Builder::new();
 
         let rel_expr = builder.build(ast)?;
-        println!("{:#?}", rel_expr);
+        // println!("{:#?}", rel_expr);
 
         let exec = default_implementation(&rel_expr)?;
 
@@ -33,7 +33,7 @@ fn test_planner() {
     let mut exec = planner.plan(&ast).unwrap();
     exec.open().unwrap();
     let res = exec.next().unwrap();
-    println!("{:#?}", res);
+    // println!("{:#?}", res);
     exec.close().unwrap();
 }
 
@@ -45,6 +45,27 @@ fn test_scan() {
         .parse(
             r#"
     MATCH (a:Person)
+    RETURN a;
+    "#,
+        )
+        .unwrap();
+    let mut exec = planner.plan(&ast).unwrap();
+    exec.open().unwrap();
+    while let Some(res) = exec.next().unwrap() {
+        // println!("{:#?}", res);
+    }
+    exec.close().unwrap();
+}
+
+#[test]
+fn test_selection() {
+    let planner = Planner {};
+    let parser = Parser {};
+    let ast = parser
+        .parse(
+            r#"
+    MATCH (a:Person)
+    WHERE a.id = 1
     RETURN a;
     "#,
         )

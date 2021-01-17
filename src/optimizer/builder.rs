@@ -50,7 +50,9 @@ impl Builder {
                 let rhs = self.build_scalar(and.rhs.as_ref())?;
                 ScalarExpr::LogicAnd(Box::new(lhs), Box::new(rhs))
             }
-            _ => unimplemented!(),
+            ASTExpr::NumberLit(v) => ScalarExpr::NumberLiteral(v.to_owned()),
+            ASTExpr::StringLit(v) => ScalarExpr::StringLiteral(v.to_owned()),
+            _ => unimplemented!("{:#?}", expr),
         };
 
         Ok(final_expr)
@@ -68,22 +70,42 @@ impl Builder {
     }
 
     fn build_match(&mut self, match_clause: &MatchClause) -> Result<RelExpr, Error> {
-        let mut final_expr = self.build_pattern(&match_clause.pattern)?;
+        let mut exprs = Vec::new();
+        for p in match_clause.pattern.iter() {
+            exprs.push(self.build_pattern(p)?);
+        }
 
-        final_expr = match &match_clause.filter {
-            Some(predicate) => {
-                let scalar = self.build_scalar(&predicate)?;
-                self.build_selection(final_expr, scalar)?
+        // If there are more than one patterns, join them
+        let mut final_expr = if exprs.len() > 1 {
+            exprs
+                .into_iter()
+                .map(|v| Result::<RelExpr, Error>::Ok(v))
+                .fold_first(|acc, expr| self.build_join(acc.unwrap(), expr.unwrap()))
+                .unwrap()?
+        } else {
+            exprs.pop().unwrap()
+        };
+
+        final_expr = if !match_clause.filter.is_empty() {
+            let mut scalar = Vec::new();
+            for predicate in match_clause.filter.iter() {
+                scalar.push(self.build_scalar(&predicate)?);
             }
-            None => final_expr,
+            self.build_selection(final_expr, &scalar)?
+        } else {
+            final_expr
         };
 
         Ok(final_expr)
     }
 
-    fn build_selection(&mut self, expr: RelExpr, predicate: ScalarExpr) -> Result<RelExpr, Error> {
+    fn build_selection(
+        &mut self,
+        expr: RelExpr,
+        predicate: &Vec<ScalarExpr>,
+    ) -> Result<RelExpr, Error> {
         let final_expr = SelectExpr {
-            filter: vec![predicate],
+            filter: predicate.to_owned(),
             child: Box::new(expr),
         };
 
@@ -263,5 +285,5 @@ fn test_builder() {
 
     let mut builder = Builder::new();
 
-    println!("{:#?}", builder.build(&ast).unwrap());
+    // println!("{:#?}", builder.build(&ast).unwrap());
 }
