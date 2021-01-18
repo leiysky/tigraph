@@ -295,6 +295,10 @@ fn comp_expr(input: &str) -> IResult<&str, Expr> {
                     lhs: Box::new(v.0),
                     rhs: Box::new(r),
                 }),
+                ("!=", r) => Expr::NotEqualExpr(NotEqualExpr {
+                    lhs: Box::new(v.0),
+                    rhs: Box::new(r),
+                }),
                 ("<", r) => Expr::LessExpr(LessExpr {
                     lhs: Box::new(v.0),
                     rhs: Box::new(r),
